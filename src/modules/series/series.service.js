@@ -19,11 +19,42 @@ const createSeries = async (seriesData) => {
 };
 
 /**
- * Mengambil semua data series
+ * Mengambil semua data series dengan opsi filter (status, type, genre).
+ * @param {object} queryParams - Objek query dari URL (req.query)
  * @returns {Promise<Series[]>}
  */
-const findAllSeries = async () => {
-    const allSeries = await Series.findAll();
+const findAllSeries = async (queryParams) => {
+    const { status, type, genre } = queryParams;
+
+    // 1. Siapkan 'where' clause untuk filtering di tabel 'series'
+    const whereClause = {};
+    if (status) {
+        whereClause.status = status;
+    }
+    if (type) {
+        whereClause.type = type;
+    }
+
+    // 2. Siapkan 'include' clause untuk filtering di tabel 'genres'
+    const includeClause = [{
+        model: Genre,
+        as: 'genres',
+        attributes: ['name', 'slug'], // Hanya tampilkan nama dan slug genre
+        through: { attributes: [] }
+    }];
+
+    // Jika ada query ?genre=... , tambahkan kondisi 'where' di dalam 'include'
+    if (genre) {
+        includeClause[0].where = { slug: genre };
+    }
+
+    // 3. Gabungkan semuanya dalam query findAll
+    const allSeries = await Series.findAll({
+        where: whereClause,
+        include: includeClause,
+        order: [['createdAt', 'DESC']]
+    });
+
     return allSeries;
 };
 
@@ -106,6 +137,8 @@ const addGenresToSeries = async (seriesUuid, genreIds) => {
     return updatedSeries;
 };
 
+
+
 module.exports = {
     createSeries,
     findAllSeries,
@@ -113,5 +146,4 @@ module.exports = {
     updateSeriesByUuid,
     deleteSeriesByUuid,
     addGenresToSeries
-    
 };
