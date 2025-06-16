@@ -40,6 +40,19 @@ Genre.belongsToMany(Series, {
     as: 'series'
 });
 
+// --- Hubungan User dan Series (Many-to-Many untuk Library) ---
+User.belongsToMany(Series, {
+  through: 'user_libraries', // Nama tabel penghubung
+  foreignKey: 'user_id',
+  as: 'library' // Saat kita ambil data user, koleksinya kita sebut 'library'
+});
+
+Series.belongsToMany(User, {
+  through: 'user_libraries',
+  foreignKey: 'series_id',
+  as: 'bookmarkedBy' // Saat kita ambil data series, kita bisa lihat siapa saja yg me-bookmark
+});
+
 // --- Hubungan lain bisa ditambahkan di sini nanti ---
 // Contoh:
 // User.hasMany(Comment, { foreignKey: 'user_id' });
