@@ -3,7 +3,11 @@ const asyncErrorHandler = require('../../errors/asyncErrorHandler');
 const { SuccessResponse } = require('../../utils/apiResponse');
 
 const createSeries = asyncErrorHandler(async (req, res, next) => {
-    const newSeries = await seriesService.createSeries(req.body);
+    // Ambil file buffer dari req.file (yang disiapkan oleh multer)
+    const fileBuffer = req.file ? req.file.buffer : null;
+
+    // Panggil service dengan data body dan file buffer
+    const newSeries = await seriesService.createSeries(req.body, fileBuffer);
 
     new SuccessResponse({
         statusCode: 201,
@@ -11,6 +15,8 @@ const createSeries = asyncErrorHandler(async (req, res, next) => {
         data: newSeries,
     }).send(res);
 });
+
+
 /**
  * Controller untuk mengambil semua data series
  */
@@ -22,6 +28,7 @@ const getAllSeries = asyncErrorHandler(async (req, res, next) => {
         data: allSeries,
     }).send(res);
 });
+
 
 /**
  * Controller untuk mengambil data satu series berdasarkan UUID.
@@ -37,19 +44,29 @@ const getSeriesByUuid = asyncErrorHandler(async (req, res, next) => {
     }).send(res);
 });
 
+
 /**
  * Controller untuk mengupdate data series.
  */
 const updateSeries = asyncErrorHandler(async (req, res, next) => {
-    const { uuid } = req.params;
-    const updateData = req.body;
+    try {
+        const { uuid } = req.params;
+        const updateData = req.body;
+        const fileBuffer = req.file ? req.file.buffer : null;
 
-    const updatedSeries = await seriesService.updateSeriesByUuid(uuid, updateData);
+        if (!updateData || Object.keys(updateData).length === 0) {
+            throw new BadRequestError('Data untuk update tidak boleh kosong');
+        }
 
-    new SuccessResponse({
-        message: 'Data series berhasil di-update.',
-        data: updatedSeries,
-    }).send(res);
+        const updatedSeries = await seriesService.updateSeriesByUuid(uuid, updateData, fileBuffer);
+
+        new SuccessResponse({
+            message: 'Data series berhasil di-update.',
+            data: updatedSeries,
+        }).send(res);
+    } catch (error) {
+        next(error);
+    }
 });
 
 /**

@@ -4,13 +4,15 @@ const validate = require('../../middlewares/validation.middlewares');
 const { createSeriesSchema, updateSeriesSchema, deleteSeriesSchema, assignGenresToSeriesSchema } = require('./series.validator');
 const { protect, restrictTo } = require('../../middlewares/auth.middlewares');
 const chapterRouter = require('../chapters/chapter.route');
+const upload = require('../../middlewares/multer.middlewares');
 
 // Alur: Request -> Cek Token (protect) -> Cek Role (restrictTo) -> Validasi Data -> Controller
 router.post(
-    '/', 
-    protect, 
-    restrictTo('admin'), 
-    validate(createSeriesSchema), 
+    '/',
+    protect,
+    restrictTo('admin'),
+    upload.single('coverImage'), 
+    validate(createSeriesSchema),
     seriesController.createSeries
 );
 
@@ -25,6 +27,7 @@ router.patch(
     '/:uuid',
     protect,
     restrictTo('admin'),
+    upload.single('coverImage'),
     validate(updateSeriesSchema),
     seriesController.updateSeries
 );
@@ -43,7 +46,7 @@ router.post(
     restrictTo('admin'),
     validate(assignGenresToSeriesSchema),
     seriesController.assignGenres
-);
+)
 
 // Semua request ke /:seriesUuid/chapters akan diteruskan ke chapterRouter
 router.use('/:seriesUuid/chapters', chapterRouter);

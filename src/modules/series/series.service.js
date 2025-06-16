@@ -1,21 +1,66 @@
 const { Series } = require('./series.model');
+const { Op } = require('sequelize');
 const BadRequestError = require('../../errors/BadRequestError');
 const NotFoundError = require('../../errors/NotFoundError');
 const { Genre } = require('../genres/genre.model');
+const { uploadToCloudinary } = require('../../utils/cloudinaryUploader');
 
-/**
- * Membuat data series baru
- * @param {object} seriesData 
- * @returns {Promise<Series>}
- */
-const createSeries = async (seriesData) => {
-    const existingSeries = await Series.findOne({ where: { title: seriesData.title } });
+// Helper untuk membuat slug
+const generateSlug = (text) => text.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+
+const createSeries = async (seriesData, fileBuffer) => {
+    const slug = generateSlug(seriesData.title);
+    const existingSeries = await Series.findOne({ where: { slug: slug } });
     if (existingSeries) {
         throw new BadRequestError(`Series dengan judul "${seriesData.title}" sudah ada.`);
     }
 
-    const newSeries = await Series.create(seriesData);
-    return newSeries;
+    let coverImageUrl = null;
+    if (fileBuffer) {
+        const uploadResponse = await uploadToCloudinary(fileBuffer, {
+            folder: `nazumini/${slug}`,
+            public_id: 'cover',
+        });
+        coverImageUrl = uploadResponse.secure_url;
+    }
+
+    return await Series.create({ ...seriesData, slug, coverImageUrl });
+};
+
+const updateSeriesByUuid = async (seriesUuid, updateData, fileBuffer) => {
+    const series = await findSeriesByUuid(seriesUuid);
+    let { slug } = series;
+
+    if (updateData.title && updateData.title !== series.title) {
+        slug = generateSlug(updateData.title);
+        const existingSeries = await Series.findOne({ 
+            where: { 
+                slug,
+                uuid: { [Op.ne]: seriesUuid }
+            } 
+        });
+        if (existingSeries) {
+            throw new BadRequestError(`Judul "${updateData.title}" sudah digunakan oleh series lain.`);
+        }
+        updateData.slug = slug;
+    }    try {
+        if (fileBuffer) {
+            const uploadResponse = await uploadToCloudinary(fileBuffer, {
+                folder: `nazumini/${slug}`,
+                public_id: 'cover',
+                overwrite: true,
+            });
+            if (!uploadResponse || !uploadResponse.secure_url) {
+                throw new Error('Gagal mengupload gambar ke Cloudinary');
+            }
+            updateData.coverImageUrl = uploadResponse.secure_url;
+        }
+    } catch (error) {
+        throw new BadRequestError('Gagal mengupload gambar cover: ' + error.message);
+    }    await series.update(updateData);
+    // Ambil data terbaru setelah update
+    const updatedSeries = await findSeriesByUuid(seriesUuid);
+    return updatedSeries;
 };
 
 /**
@@ -82,22 +127,6 @@ const findSeriesByUuid = async (seriesUuid) => {
     return series;
 };
 
-/**
- * Mengupdate data series berdasarkan UUID.
- * @param {string} seriesUuid
- * @param {object} updateData
- * @returns {Promise<Series>}
- */
-const updateSeriesByUuid = async (seriesUuid, updateData) => {
-    // Kita gunakan lagi fungsi findSeriesByUuid untuk mencari datanya
-    // Ini otomatis akan handle error 404 jika series tidak ditemukan
-    const series = await findSeriesByUuid(seriesUuid);
-
-    // Lakukan update
-    await series.update(updateData);
-
-    return series;
-};
 
 /**
  * Menghapus data series berdasarkan UUID.

@@ -13,6 +13,14 @@ const createChapterSchema = z.object({
   }),
 });
 
+const deleteChapterSchema = z.object({
+  params: z.object({
+    seriesUuid: z.string().uuid('Format UUID Series tidak valid.'),
+    chapterUuid: z.string().uuid('Format UUID Chapter tidak valid.'),
+  }),
+});
+
 module.exports = {
     createChapterSchema,
+    deleteChapterSchema,
 };

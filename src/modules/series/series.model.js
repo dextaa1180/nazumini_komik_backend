@@ -19,6 +19,13 @@ const Series = sequelize.define('Series', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+
+     slug: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    
     author: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -42,7 +49,6 @@ const Series = sequelize.define('Series', {
         allowNull: true,
     }
 }, {
-    // Opsi Model
     tableName: 'series',      // Wajib: Sesuaikan nama tabel ke 'series'
     underscored: true,       // Wajib: Otomatis map camelCase ke snake_case (coverImageUrl -> cover_image_url)
     timestamps: true,        // Otomatis kelola created_at dan updated_at
