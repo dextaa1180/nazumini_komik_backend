@@ -15,7 +15,7 @@ const createSeries = asyncErrorHandler(async (req, res, next) => {
  * Controller untuk mengambil semua data series
  */
 const getAllSeries = asyncErrorHandler(async (req, res, next) => {
-    const allSeries = await seriesService.findAllSeries();
+    const allSeries = await seriesService.findAllSeries(req.query);
 
     new SuccessResponse({
         message: 'Semua data series berhasil diambil.',

@@ -5,9 +5,7 @@ const { Series } = require('../series/series.model');
 /**
  * Menambahkan, Mangambil, Menghapus sebuah series ke library milik user.
  * @param {object} user - Objek user dari Sequelize (didapat dari req.user)
- * @param {string} seriesUuid 
- * @param {number} userId
- * @returns {Promise<Series[]>}
+ * @param {string} seriesUuid - UUID dari series yang akan ditambahkan.
  * @returns {Promise<void>}
  */
 
@@ -22,7 +20,11 @@ const addSeriesToUserLibrary = async (user, seriesUuid) => {
     await user.addLibrary(series);
 };
 
-// Mengambil library milik user berdasarkan ID.
+/**
+ * Mengambil semua series yang ada di library milik user.
+ * @param {number} userId - ID dari user yang sedang login.
+ * @returns {Promise<Series[]>} Array dari objek series.
+ */
 const findUserLibrary = async (userId) => {
     // 1. Cari user berdasarkan Primary Key (ID)
     const user = await User.findByPk(userId, {
@@ -40,7 +42,12 @@ const findUserLibrary = async (userId) => {
     return user.library;
 };
 
-//Menghapus sebuah series dari library milik user.
+/**
+ * Menghapus sebuah series dari library milik user.
+ * @param {object} user - Objek user dari Sequelize.
+ * @param {string} seriesUuid - UUID dari series yang akan dihapus.
+ * @returns {Promise<void>}
+ */
 const removeSeriesFromUserLibrary = async (user, seriesUuid) => {
     // 1. Cari series untuk memastikan seriesnya ada
     const series = await seriesService.findSeriesByUuid(seriesUuid);
